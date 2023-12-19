@@ -87,9 +87,9 @@ def write_genericSimlib(simlibFilename,
     """
     print('========================')
     print(mapFile, surveypix_file)
-    
+
     print('========================')
-                  
+
     opsimsummary_version = oss.__version__
 
     minMJD = summary.expMJD.min()
@@ -169,7 +169,7 @@ def write_genericSimlib(simlibFilename,
 
     # Area of our selected footprint in solid angle (Used by SNANA for simulation)
     solidangle = hp.nside2pixarea(nside, degrees=False) * np.float64(totalfields)
- 
+
     print('Going to write simlib file {0} for opsim output\n')
     # This is not very reliable
     if script_name is None:
@@ -197,8 +197,8 @@ def write_genericSimlib(simlibFilename,
         git_info = f'The script was part of a {dirty} git repository in the branch {branch} and commit SHA {git_sha} and was labelled with a version : {oss.__version__}'
     except:
         git_info = 'The script was not detected to be a part of a git repository'
-    
-        
+
+
     # OpSimSummary version information 
     version = oss.__version__   # RB: I think this line is not needed
 
@@ -262,7 +262,7 @@ if __name__ == '__main__':
                         dest='No_get_ddf_pixels', action='store_false')
     parser.add_argument('--no_write_wfd_simlib', help='Whether to write out WFD simlib, defaults to writing it out',
                         dest='write_wfd_simlib', action='store_false')
-    parser.add_argument('--opsimversion', help='version of opsim used lsstv3|lsstv4|, defaults to fbsv2',
+    parser.add_argument('--opsimversion', help='version of opsim used lsstv3|lsstv4|fbsv2, defaults to fbsv2',
                         default='fbsv2')
     parser.add_argument('--summaryTableName', help='name of Summary Table Summary|SummaryAllProps, defaults to "Summary"',
                         default='Summary')
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--filterNull', help='if added, then the summary table of the OpSim file will be filtered of rows that appear to have null values',
                         dest='filt_Null', action='store_true')
     parser.add_argument('--authorName', help='Name of the author to be recorded in documentation. If skipped, the login will be used instead', type=str, default=None)
-    
+
     print("read in command line options and figuring out what to do\n")
     print("---------------------------------------------------------\n")
     print("We are using opsimsummary version {0}, the library is located at {1}".format(oss.__version__, oss.__file__))
@@ -290,7 +290,7 @@ if __name__ == '__main__':
     print("---------------------------------------------------------\n")
     sys.stdout.flush()
     args = parser.parse_args()
-    
+
     print("---------------------------------------------------------\n")
     print("Obtain arguments\n")
     print("---------------------------------------------------------\n")
@@ -327,7 +327,7 @@ if __name__ == '__main__':
     write_ddf_simlib = False
     wfd_simlibfilename = args.wfd_simlibfilename
     ddf_simlibfilename = False
-    
+
     if wfd_simlibfilename is None:
         wfd_simlibfilename = basename +'_all.simlib'
     availwfdFileName = basename + "_all_avail.csv"
@@ -336,7 +336,7 @@ if __name__ == '__main__':
 
     numFields_WFD = args.numFields_WFD
     print(args)
-    
+
     sys.stdout.flush()
 
     # find ddf healpixels if the `get_ddf_pixels` is True and 
@@ -392,7 +392,7 @@ if __name__ == '__main__':
             '\n author_name', author_name,
             '\n opsim_output', opsim_output) 
     print('========================')
-    
+
 
     write_ddf_simlib = False
     if write_ddf_simlib:
