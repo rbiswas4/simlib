@@ -202,19 +202,21 @@ def write_genericSimlib(simlibFilename,
     # OpSimSummary version information 
     version = oss.__version__   # RB: I think this line is not needed
 
-    comment = 'DOCUMENTATION:\n'
+    comment =  f'DOCUMENTATION:\n'
     comment += f'    PURPOSE: simulate LSST based on mock opsim version {opsim_output}\n'
-    comment += '    INTENT:   Nominal\n'
-    comment += '    USAGE_KEY: SIMLIB_FILE\n'
-    comment += '    USAGE_CODE: snlc_sim.exe\n'
-    comment += '    VALIDATION_SCIENCE: \n'
+    comment += f'    INTENT:   Nominal\n'
+    comment += f'    USAGE_KEY: SIMLIB_FILE\n'
+    comment += f'    USAGE_CODE: snlc_sim.exe\n'
+    comment += f'    VALIDATION_SCIENCE: \n'
     comment += f'    FIELD: {fieldType}\n'
-    comment += '    NOTES: \n'
-    comment += '        PARAMS MINMJD: {:.4f}\n'.format(minMJD)
-    comment += '        PARAMS MAXMJD: {:.4f}\n'.format(maxMJD)
-    comment += '        PARAMS TOTAL_AREA: {:.3f}\n'.format(area)
-    comment += '        PARAMS SOLID_ANGLE: {:.3f}\n'.format(solidangle)
-    comment += '    VERSIONS:\n'
+    comment += f'    NOTES: \n'
+    comment += f'        PARAMS MINMJD: {minMJD:.4f}\n'
+    comment += f'        PARAMS MAXMJD: {maxMJD:.4f}\n'
+    comment += f'        PARAMS TOTAL_AREA: {area:.3f}\n'
+    comment += f'        PARAMS SOLID_ANGLE: {solidangle:.3f}\n'
+    comment += f'        WARNING_NOTICE: DDF approximately determined by nobs>=1100\n'
+    comment += f'        COMMAND: {sys.argv}\n'
+    comment += f'    VERSIONS:\n'
     comment += f'    - DATE : {dt.strftime(format="%y-%m-%d")}\n'
     comment += f'    AUTHORS : {author_name}, OpSimSummary version {oss.__version__}\n'
     comment += 'DOCUMENTATION_END:\n'
