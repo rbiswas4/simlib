@@ -230,7 +230,7 @@ class SimlibMixin(object):
         return opsimtable
 
     def fieldheader(self, fieldID, ra, dec, opsimtable, mwebv=0.0,
-                    fieldtype=None):
+                    fieldtype=None, nobs_min_ddf=1100):
         """
         Parameters
         ----------
@@ -256,8 +256,12 @@ class SimlibMixin(object):
         s += 'LIBID: {0:10d}'.format(fieldID) +'\n'
         if fieldtype is not None:
             s += 'Field: {}\n'.format(fieldtype)
-        tmp = 'RA: {0:+10.6f} DEC: {1:+10.6f}   NOBS: {2:10d} MWEBV: {3:5.2f}'
-        tmp += ' PIXSIZE: {4:5.3f}'
+        tmp = 'RA: {0:+10.6f} DEC: {1:+10.6f}   NOBS: {2:10d}   MWEBV: {3:5.2f}'
+        tmp += '   PIXSIZE: {4:5.3f}'
+        # RKNOP 2024-07-17 : added the following line; the default
+        #  nobs_min_ddf cutoff (1100) was based on looking at a histogram
+        #  of nobs from baseline 3.4
+        tmp += f'   FIELD: {"DDF" if nobs>=nobs_min_ddf else "WFD"}'
         s += tmp.format(ra, dec, nobs, mwebv, self.pixelSize) + '\n'
         # s += 'LIBID: {0:10d}'.format(fieldID) + '\n'
         s += '#                           CCD  CCD         PSF1 PSF2 PSF2/1' +'\n'
@@ -337,8 +341,7 @@ class SimlibMixin(object):
         # of the logic for other filter names. so ducking for now
         s = doc
         s += '\n\n\n'
-        s += 'SURVEY: {0:}    FILTERS: ugrizY  TELESCOPE: {1:}\n'.format(survey,
-                                                                        telescope)
+        s += 'SURVEY: {0:}    FILTERS: ugrizY\n'.format(survey)
         s += 'USER: {0:}     HOST: {1}\n'.format(user, host) 
         if numLibId is not None:
             s += 'NLIBID: {}\n'.format(numLibId)

@@ -397,7 +397,7 @@ class PointingTree(object):
 
         # tree queries
         # Keep mapping from integer indices to obsHistID
-        pointings.loc[:, 'intindex'] = np.arange(len(pointings)).astype(np.int)
+        pointings.loc[:, 'intindex'] = np.arange(len(pointings)).astype(int)
         self.indMapping = pointings['intindex'].reset_index().set_index('intindex')
 
         # Build Tree
@@ -1013,7 +1013,7 @@ class SummaryOpsim(object):
     def simLibheader(self): #, user=None, host=None, survey='LSST', telescope='LSST'):
         # comment: I would like to generalize ugrizY to a sort but am not sure
         # of the logic for other filter names. so ducking for now
-        s = 'SURVEY: {0:}    FILTERS: ugrizY  TELESCOPE: {1:}\n'.format(self.survey, self.telescope)
+        s = 'SURVEY: {0:}    FILTERS: ugrizY\n'.format(self.survey)
         s += 'USER: {0:}     HOST: {1:}\n'.format(self.user, self.host) 
         s += 'BEGIN LIBGEN\n'
         return s
