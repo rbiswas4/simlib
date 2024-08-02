@@ -202,20 +202,24 @@ def write_genericSimlib(simlibFilename,
     # OpSimSummary version information 
     version = oss.__version__   # RB: I think this line is not needed
 
+    COMMAND = ' '.join(sys.argv)  # RK^2
     comment =  f'DOCUMENTATION:\n'
     comment += f'    PURPOSE: simulate LSST based on mock opsim version {opsim_output}\n'
     comment += f'    INTENT:   Nominal\n'
     comment += f'    USAGE_KEY: SIMLIB_FILE\n'
     comment += f'    USAGE_CODE: snlc_sim.exe\n'
     comment += f'    VALIDATION_SCIENCE: \n'
-    comment += f'    FIELD: {fieldType}\n'
+
+    # xxx mark comment += f'    FIELD: {fieldType}\n' # obsolete logic 
+    comment += f'    FIELD: WFD+DDF\n'  # R.Kessler Jul 2024: no more WFD or DDF only options
+
     comment += f'    NOTES: \n'
     comment += f'        PARAMS MINMJD: {minMJD:.4f}\n'
     comment += f'        PARAMS MAXMJD: {maxMJD:.4f}\n'
     comment += f'        PARAMS TOTAL_AREA: {area:.3f}\n'
     comment += f'        PARAMS SOLID_ANGLE: {solidangle:.3f}\n'
     comment += f'        WARNING_NOTICE: DDF approximately determined by nobs>=1100\n'
-    comment += f'        COMMAND: {sys.argv}\n'
+    comment += f'        COMMAND: {COMMAND}\n'
     comment += f'    VERSIONS:\n'
     comment += f'    - DATE : {dt.strftime(format="%y-%m-%d")}\n'
     comment += f'    AUTHORS : {author_name}, OpSimSummary version {oss.__version__}\n'
@@ -424,11 +428,14 @@ if __name__ == '__main__':
     if write_wfd_simlib :
         print('\n\n Task: writing out simlib for WFD')
         sys.stdout.flush()
+        # R.Kessler July 2024 increase maxVists from 100k to 300k, and add nside=512 arg
+        #    (replace previous default of nside=256)
         x, y  = write_genericSimlib(simlibFilename=wfd_simlibfilename,
-                                    summary=summary, minVisits=500, maxVisits=100000,
+                                    summary=summary, minVisits=500, maxVisits=300000,
                                     numFields=numFields_WFD, mapFile='wfd_minion_1016_sqlite.csv',
                                     fieldType='WFD', # opsimoutput=dbname, 
                                     vetoed_hids=ddf_hid,
+                                    nside=512,        # R.Kessler July 2024
                                     script_name=script_name)
         print('Finished writing out simlib for WFD')
         print('\n\n Task: write mapping to csv')

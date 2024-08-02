@@ -5,7 +5,7 @@ Module with functionality to represent SNANA simlib data.
 """
 from __future__ import division, print_function, unicode_literals
 __all__ = ['SimlibMixin', 'Simlibs']
-import os
+import os, sys
 import numpy as np
 import subprocess
 from io import StringIO, BytesIO
@@ -250,7 +250,10 @@ class SimlibMixin(object):
             string used to construct `Field: fieldtype` line, if None this
             line is left out.
         """
-        nobs = len(opsimtable)
+        nobs      = len(opsimtable)
+        fieldname = "DDF" if nobs>=nobs_min_ddf else "WFD"  # R.Kessler
+        if fieldname == "WFD" : return None
+        
         # String formatting
         s = '# --------------------------------------------' +'\n' 
         s += 'LIBID: {0:10d}'.format(fieldID) +'\n'
@@ -261,7 +264,7 @@ class SimlibMixin(object):
         # RKNOP 2024-07-17 : added the following line; the default
         #  nobs_min_ddf cutoff (1100) was based on looking at a histogram
         #  of nobs from baseline 3.4
-        tmp += f'   FIELD: {"DDF" if nobs>=nobs_min_ddf else "WFD"}'
+        tmp += f'   FIELD: {fieldname}'
         s += tmp.format(ra, dec, nobs, mwebv, self.pixelSize) + '\n'
         # s += 'LIBID: {0:10d}'.format(fieldID) + '\n'
         s += '#                           CCD  CCD         PSF1 PSF2 PSF2/1' +'\n'
@@ -306,6 +309,10 @@ class SimlibMixin(object):
         # Write out the header for each field
         s = self.fieldheader(fieldID, ra, dec, opsimtable,
                              mwebv=mwebv, fieldtype=fieldtype)
+
+        if s is None:
+            return ""  # R.Kessler
+        
         # Write out the actual field
         s += self.formatSimLibField(fieldID, opsimtable, sep=' ')
         # Write out the footer for each field
@@ -366,7 +373,8 @@ class SimlibMixin(object):
             # Write out the header to the simlib file
             simlib_header = self.simLibheader(numLibId=numLibId, doc=doc, comments=comments)
             fh.write(simlib_header)
-
+            fh.flush()  # RK
+            
             # Now write the actual simlib data to file
             for field in fields:
 
@@ -381,6 +389,7 @@ class SimlibMixin(object):
                                                   opsimtable, mwebv=mwebv,
                                                   fieldtype=fieldtype))
 
+                fh.flush()  # RK
                 # Write out the header for each field
                 # fh.write(self.fieldheader(num_fields, ra, dec, opsimtable,
                 #                           mwebv=mwebv))
@@ -459,8 +468,9 @@ class Simlibs(SynOpSim, SimlibMixin):
 	mapping from the new index `simlibId` to the old index `hid`
 	"""
         surveydf['simlibId'] = -1
-
-        if numFields <= len(surveydf):
+        len_surveydf = len(surveydf)
+        
+        if numFields <= len_surveydf :
             surveydf = surveydf.sample(n=numFields, replace=False,
                                        random_state=rng)
             # hids = rng.choice(surveydf.reset_index()['hid'].values, size=numFields,
@@ -470,9 +480,21 @@ class Simlibs(SynOpSim, SimlibMixin):
                                        random_state=rng)
             print("Warning: You have asked for more samples than the original number of fields")
             print('Printing original number of fields instead')
+            sys.stdout.flush()
 
+            
         hids = surveydf.reset_index()['hid'].values
 
+        # xxxxxxxxxxx
+        n_hids      = len(hids) # xxxx .xyz
+        hids_unique = list(set(hids))
+        n_unique    = len(hids_unique)
+        
+        print(f"\n xxx len_surveydf={len_surveydf}  n_hids={n_hids}  n_unique={n_unique}  " \
+              f"\n xxx hids = \n{hids}\n")
+        sys.stdout.flush()
+        # xxxxxxxxxxx
+        
         surveydf.reset_index().set_index('hid')
         surveydf.loc[hids, 'simlibId'] = np.arange(len(hids))
         return surveydf
