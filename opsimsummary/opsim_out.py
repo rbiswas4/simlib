@@ -31,19 +31,29 @@ class OpSimOutput(object):
         version of OpSim corresponding to the output format.
     summary: `pd.DataFrame`
         selected records from the Summary Table of pointings
+    #### Enable propIDDict None 
     propIDDict: dict
         dictionary with strings as keys and integers used in the Summary
         Table to denote these proposals
-    proposalTable: `pd.DataFrame`
+    
+    #### Enable proposalTable None 
+    proposalTable: `pd.DataFrame`, 
         the propsal table in the output
     subset: string
         subset of proposals included in this class
+
+    #### Enable propIDDict None 
     propIDs : list of integers
         integers corresponding to the subset selected through proposals
+
+    use_proposal_table : Bool, defaults to True
+        Do not use a proposal table, and works if no ProposalTable exists.
+        This is only implemented for opsimversion = `fsbv2`
     """
     def __init__(self, summary, propIDDict=None, proposalTable=None,
                  subset=None, propIDs=None, 
-                 opsimversion='fbsv2'):
+                 opsimversion='fbsv2',
+                 use_proposal_table=True):
         """
         Constructor for the `OpSimOutput` class
 
@@ -84,9 +94,13 @@ class OpSimOutput(object):
             and `lsstv4` refers to outputs available from  OpSim version 4. `fbs` 
             refers to Feature Based Scheduler, with versions 1.x differentiated
             from versions 2.x
+        use_proposal_table : Bool, defaults to True
+            Do not use a proposal table, and works if no ProposalTable exists.
+            This is only implemented for opsimversion = `fsbv2`
         """
         self.opsimversion = opsimversion
         self._opsimvars = None
+        self.use_proposal_table = use_proposal_table
         self.allowed_subsets = self.get_allowed_subsets(opsimversion)
         self.subset = subset
         self.propIDDict = propIDDict
@@ -99,15 +113,12 @@ class OpSimOutput(object):
             print('summary table has nans, exiting\n')
             sys.exit(1)
 
-        ddfPropID = list(self.propIDDict['ddf'])
-        ddfidx = summary.query('propID == @ddfPropID').index
+        if propIDDict is not None:
+            ddfPropID = list(self.propIDDict['ddf'])
+            ddfidx = summary.query('propID == @ddfPropID').index
 
-        # opsimVars['pointingRA'] / 'pointingDec' are native variables in the OpSim tables 
-        # denoting RA and Dec. These are usually in degrees (opsimVars['angleUnit'])
-        # However, we only work with ditheredRA and ditheredDec, hence these variables have to
-        # be assigned.
-        summary.loc[ddfidx, 'ditheredRA'] = summary.loc[ddfidx, self.opsimVars['pointingRA']]
-        summary.loc[ddfidx, 'ditheredDec'] = summary.loc[ddfidx, self.opsimVars['pointingDec']]
+            summary.loc[ddfidx, 'ditheredRA'] = summary.loc[ddfidx, self.opsimVars['pointingRA']]
+            summary.loc[ddfidx, 'ditheredDec'] = summary.loc[ddfidx, self.opsimVars['pointingDec']]
 
         # Have a clear unambiguous ra, dec in radians following LSST convention
         # These are the columns `_ra`, `_dec` which should have the dithered
@@ -140,7 +151,8 @@ class OpSimOutput(object):
         self._propID = propIDs
 
     @staticmethod
-    def get_opsimVariablesForVersion(opsimversion='fbs2'):
+    def get_opsimVariablesForVersion(opsimversion='fbs2',
+                                     use_proposal_table=True):
         """Static method to returns a dictionary for the opsim version where the keys
         are names of quantities used in this codebase, and the values are the names of
         quantities in the OpSim output database
@@ -149,6 +161,11 @@ class OpSimOutput(object):
         ----------
         opsimversion: string, defaults to `fbsv2`
             can be {`fbsv1`|`fbsv2`}
+
+
+        use_proposal_table : Bool, defaults to True
+            whether we should use a proposal table. Only works with opsimversion
+            fsb2
 
         Returns
         -------
@@ -168,6 +185,9 @@ class OpSimOutput(object):
          'pointingRA': 'ditheredRA', 'pointingDec': 'ditheredDec',
          'filtSkyBrightness': 'skyBrightness', 'angleUnit': 'degrees'}
         """
+        if opsimversion not in ('fbsv2'):
+            if use_proposal_table == False:
+                raise NotImplementedError(f'Not having a proposal table is not implemented for opsimversion = {opsimversion}')
         if opsimversion == 'lsstv3':
 
             x = dict(summaryTableName='Summary',
@@ -232,19 +252,34 @@ class OpSimOutput(object):
 
         # Feature Based Scheduler : version 2.x
         elif opsimversion == 'fbsv2':
-            x = dict(summaryTableName='observations',
-                     obsHistID='observationId', 
-                     propName='proposalType',
-                     propIDName='proposalId',
-                     propIDNameInSummary='proposalId',
-                     ops_wfdname='WFD',
-                     ops_ddfname='DDF',
-                     expMJD='observationStartMJD',
-                     FWHMeff='seeingFwhmEff',
-                     pointingRA='fieldRA',
-                     pointingDec='fieldDec',
-                     filtSkyBrightness='skyBrightness',
-                     angleUnit='degrees')
+            if use_proposal_table:
+                x = dict(summaryTableName='observations',
+                         obsHistID='observationId', 
+                         propName='proposalType',
+                         propIDName='proposalId',
+                         propIDNameInSummary='proposalId',
+                         ops_wfdname='WFD',
+                         ops_ddfname='DDF',
+                         expMJD='observationStartMJD',
+                         FWHMeff='seeingFwhmEff',
+                         pointingRA='fieldRA',
+                         pointingDec='fieldDec',
+                         filtSkyBrightness='skyBrightness',
+                         angleUnit='degrees')
+            else:      
+                x = dict(summaryTableName='observations',
+                         obsHistID='observationId', 
+                         propName=None,
+                         propIDName=None,
+                         propIDNameInSummary=None,
+                         ops_wfdname='WFD',
+                         ops_ddfname=None,
+                         expMJD='observationStartMJD',
+                         FWHMeff='seeingFwhmEff',
+                         pointingRA='fieldRA',
+                         pointingDec='fieldDec',
+                         filtSkyBrightness='skyBrightness',
+                         angleUnit='degrees')
 
         else:
             raise NotImplementedError('`get_opsimVariablesForVersion` is not implemented for this `opsimversion`')
@@ -397,6 +432,7 @@ class OpSimOutput(object):
                     user_propIDs=None,
                     # dithercolumns=None,
                     # add_dithers=False,
+                    use_proposal_table=True,
                     tableNames=('Summary', 'Proposal'),
                     filterNull=False,
                     **kwargs):
@@ -435,15 +471,20 @@ class OpSimOutput(object):
         # rather than the property, but note that the property is calculated
         # through this method. So this gives the same thing
         dithercolumns = None
-        opsimVars = cls.get_opsimVariablesForVersion(opsimversion)
+        opsimVars = cls.get_opsimVariablesForVersion(opsimversion,
+                                                     use_proposal_table)
 
         # Set tablenames 
         ### Note to self : Proposal has not changed yet, and is thus
         ### not part of opsimVars
-        tableNames = (opsimVars['summaryTableName'], 'Proposal')
+        if use_proposal_table:
+            tableNames = (opsimVars['summaryTableName'], 'Proposal')
+        else:
+            tableNames = (opsimVars['summaryTableName'])
 
         # Check that subset parameter is legal
-        allowed_subsets = cls.get_allowed_subsets(opsimversion)
+        allowed_subsets = cls.get_allowed_subsets(opsimversion,
+                                                  use_proposal_table)
         subset = subset.lower()
         if subset not in allowed_subsets:
             raise NotImplementedError('subset {} not implemented'.\
@@ -457,10 +498,14 @@ class OpSimOutput(object):
         propDict, propIDs, proposals = cls._get_propIDs(tableNames, engine,
                                                         opsimversion,
                                                         subset,
-                                                        user_propIDs=user_propIDs)
+                                                        user_propIDs=user_propIDs,
+                                                        use_proposal_table=use_proposal_table)
 
         # Read the observations
-        summary = cls._read_summary_table_raw(engine, opsimVars, propIDs, subset)
+        summary = cls._read_summary_table_raw(engine,
+                                              opsimVars,
+                                              propIDs,
+                                              subset)
 
         if len(summary) == 0:
             return cls(propIDDict=propDict,
@@ -505,7 +550,7 @@ class OpSimOutput(object):
         # Drop Duplicates
         if subset != '_all':
             # Drop duplicates unless this is to write out the entire OpSim
-            summary = cls.dropDuplicates(summary, propDict, opsimversion)
+            summary = cls.dropDuplicates(summary, propDict, opsimversion, use_proposal_table=use_proposal_table)
 
         # Set Standard Index
         summary.set_index('obsHistID', inplace=True)
@@ -567,7 +612,7 @@ class OpSimOutput(object):
 
     @staticmethod
     def _get_propIDs(tableNames, engine, opsimversion, subset,
-                     user_propIDs=None):
+                     user_propIDs=None, use_proposal_table=True):
         """return a sequence of `proposalId` which determine the subset of 
         observations from tha `summary` table. 
        
@@ -590,14 +635,19 @@ class OpSimOutput(object):
         """
         # Read the proposal table to find out which propID corresponds to
         # the subsets requested
-        proposals = pd.read_sql_table(tableNames[1], con=engine)
-        propDict = OpSimOutput.get_propIDDict(proposals, opsimversion=opsimversion)
+        if use_proposal_table:
+            proposals = pd.read_sql_table(tableNames[1], con=engine)
+            propDict = OpSimOutput.get_propIDDict(proposals, 
+                                                  opsimversion=opsimversion)
 
-        # Seq of propIDs consistent with subset
-        _propIDs = OpSimOutput.propIDVals(subset, propDict, proposals)
+            # Seq of propIDs consistent with subset
+            _propIDs = OpSimOutput.propIDVals(subset, propDict, proposals)
 
-        # If propIDs and subset were both provided, override subset propIDs
-        propIDs = OpSimOutput._overrideSubsetPropID(user_propIDs, _propIDs)
+            # If propIDs and subset were both provided, override subset propIDs
+            propIDs = OpSimOutput._overrideSubsetPropID(user_propIDs, _propIDs)
+        else:
+            propDict, propIDs, proposals = None, None, None
+
 
         return propDict, propIDs, proposals
 
@@ -612,7 +662,7 @@ class OpSimOutput(object):
         return engine
 
     @staticmethod
-    def dropDuplicates(df, propIDDict, opsimversion):
+    def dropDuplicates(df, propIDDict, opsimversion, use_proposal_table=True):
         """
         drop duplicates ensuring keeping identity of ddf visits
 
@@ -625,6 +675,8 @@ class OpSimOutput(object):
         -------
         `pd.DataFrame` with the correct propID and duplicates dropped
         """
+        if not use_proposal_table:
+            return df
         if opsimversion == 'sstf':
             return df
 
@@ -717,17 +769,20 @@ class OpSimOutput(object):
         return propIDs
 
     @staticmethod
-    def get_allowed_subsets(opsimversion):
+    def get_allowed_subsets(opsimversion, use_proposal_table=True):
         """Provide a sequence of implemented subset values"""
         # Note this is really a version which has annotations on top of fbs v1p3
         # Making this if statement superfluous
+        if not use_proposal_table:
+            return 'unique_all'
+
         if opsimversion.lower() == 'fbsv1':
             return ('_all', 'ddf', 'wfd', 'combined', 'unique_all')
         else:
             return ('_all', 'ddf', 'wfd', 'combined', 'unique_all')
 
     @staticmethod
-    def get_propIDDict(proposalDF, opsimversion='fbsv2'):
+    def get_propIDDict(proposalDF, opsimversion='fbsv2', use_proposal_table=True):
         """
         Return a dictionary with keys 'ddf', ad 'wfd' with the proposal IDs
         corresponding to deep drilling fields (ddf) and universal cadence (wfd) 
@@ -743,6 +798,9 @@ class OpSimOutput(object):
         dictionary with keys 'wfd' and 'ddf' with values given by integers
             corresponding to propIDs for these proposals
         """
+
+        ### WHY DO WE NEED THIS ANYMORE ? 
+        ### Is this not covered in opsimvarsiablesforversion Now?
         oss_wfdName = 'wfd'
         oss_ddfName = 'ddf'
 
