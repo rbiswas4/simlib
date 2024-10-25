@@ -47,7 +47,7 @@ class SimlibMixin(object):
         - user (default can be None)
         - host (default can be None)
         - telescope
-        - survey 
+        - survey
         - pixelSize
     In order to be able to write out the simlibs to disk, it should also have
     a method to provide a sequence (may be a generator) of fields, and
@@ -111,7 +111,7 @@ class SimlibMixin(object):
             user = os.getlogin()
 
         # report a host on which the calculations are done. either from
-        # constructor parameters or from the system hostname utility 
+        # constructor parameters or from the system hostname utility
         if host is None:
             host = os.getenv( 'HOSTNAME' )
         x = (('user', user),
@@ -167,7 +167,7 @@ class SimlibMixin(object):
         Returns
         -------
         DataFrame with additional columns of 'simLibPsf', 'simLibZPTAVG', and
-        'simLibSkySig' 
+        'simLibSkySig'
 
         .. note :: This was written from a piece of f77 code by David
             Cinabro sent by email on May 26, 2015.
@@ -219,7 +219,7 @@ class SimlibMixin(object):
 
         zpt_cor = 2.5 * np.log10(1.0 + 1.0 / (area * tmp))
         simlib_zptavg = zpt_approx + zpt_cor
-        # ZERO PT CALCULATION 
+        # ZERO PT CALCULATION
         opsimtable['simLibZPTAVG'] = simlib_zptavg
 
 
@@ -252,10 +252,13 @@ class SimlibMixin(object):
         """
         nobs      = len(opsimtable)
         fieldname = "DDF" if nobs>=nobs_min_ddf else "WFD"  # R.Kessler
-        if fieldname == "WFD" : return None
-        
+
+        # RK² NEED A FLAG so that we can do only-DDF simlibs; for now
+        # uncomment the next line to accomplish that.
+        # if fieldname == "WFD" : return None
+
         # String formatting
-        s = '# --------------------------------------------' +'\n' 
+        s = '# --------------------------------------------' +'\n'
         s += 'LIBID: {0:10d}'.format(fieldID) +'\n'
         if fieldtype is not None:
             s += 'Field: {}\n'.format(fieldtype)
@@ -295,12 +298,12 @@ class SimlibMixin(object):
                    "{0:4.2f}".format(0.),                  # PSF2
                    "{0:4.3f}".format(0.),                  # PSFRatio
                    "{0:6.2f}".format(data.simLibZPTAVG),   # ZPTAVG
-                   "{0:6.3f}".format(0.005),               # ZPTNoise 
+                   "{0:6.3f}".format(0.005),               # ZPTNoise
                    "{0:+7.3f}".format(-99.)]               # MAG
             s = sep.join(lst)
             y += s + '\n'
         return y
-    
+
     def simlibFieldasString(self, fh, fieldID, ra, dec, opsimtable,
                             mwebv=0.0, fieldtype=None):
 
@@ -312,7 +315,7 @@ class SimlibMixin(object):
 
         if s is None:
             return ""  # R.Kessler
-        
+
         # Write out the actual field
         s += self.formatSimLibField(fieldID, opsimtable, sep=' ')
         # Write out the footer for each field
@@ -349,7 +352,7 @@ class SimlibMixin(object):
         s = doc
         s += '\n\n\n'
         s += 'SURVEY: {0:}    FILTERS: ugrizY\n'.format(survey)
-        s += 'USER: {0:}     HOST: {1}\n'.format(user, host) 
+        s += 'USER: {0:}     HOST: {1}\n'.format(user, host)
         if numLibId is not None:
             s += 'NLIBID: {}\n'.format(numLibId)
         s += 'NPE_PIXEL_SATURATE:   100000\n'
@@ -357,7 +360,7 @@ class SimlibMixin(object):
         s += comments + '\n'
         s += 'BEGIN LIBGEN\n'
         return s
-    
+
     def simLibFooter(self, numFields):
         """
         """
@@ -367,14 +370,14 @@ class SimlibMixin(object):
 
     def writeSimlib(self, filename, fields, doc='\n', comments='\n',
                     fieldtype=None, mwebv=0., numLibId=None):
-            
+
         num_fields = 0
         with open(filename, 'w') as fh:
             # Write out the header to the simlib file
             simlib_header = self.simLibheader(numLibId=numLibId, doc=doc, comments=comments)
             fh.write(simlib_header)
             fh.flush()  # RK
-            
+
             # Now write the actual simlib data to file
             for field in fields:
 
@@ -399,7 +402,7 @@ class SimlibMixin(object):
                 # fh.write(self.fieldfooter(fieldID))
                 num_fields += 1
 
-            # Now write out the footer to the entire simlib file 
+            # Now write out the footer to the entire simlib file
             simlib_footer = self.simLibFooter(num_fields)
             fh.write(simlib_footer)
             return num_fields
@@ -417,7 +420,7 @@ class Simlibs(SynOpSim, SimlibMixin):
         """Generator for simlib fields for a sequence of fields
         defined in a dataFrame called `surveyPix`. The dataFrame
         `surveyPix` must have the following columns `simlibId`,
-	`ra`, `dec` and must be sorted in increasing order of 
+	`ra`, `dec` and must be sorted in increasing order of
 	`simlibId`.
 
 	Parameters
@@ -469,7 +472,7 @@ class Simlibs(SynOpSim, SimlibMixin):
 	"""
         surveydf['simlibId'] = -1
         len_surveydf = len(surveydf)
-        
+
         if numFields <= len_surveydf :
             surveydf = surveydf.sample(n=numFields, replace=False,
                                        random_state=rng)
@@ -482,19 +485,19 @@ class Simlibs(SynOpSim, SimlibMixin):
             print('Printing original number of fields instead')
             sys.stdout.flush()
 
-            
+
         hids = surveydf.reset_index()['hid'].values
 
         # xxxxxxxxxxx
         n_hids      = len(hids) # xxxx .xyz
         hids_unique = list(set(hids))
         n_unique    = len(hids_unique)
-        
+
         print(f"\n xxx len_surveydf={len_surveydf}  n_hids={n_hids}  n_unique={n_unique}  " \
               f"\n xxx hids = \n{hids}\n")
         sys.stdout.flush()
         # xxxxxxxxxxx
-        
+
         surveydf.reset_index().set_index('hid')
         surveydf.loc[hids, 'simlibId'] = np.arange(len(hids))
         return surveydf
@@ -514,6 +517,7 @@ class Simlibs(SynOpSim, SimlibMixin):
                                    outfile=outfile, subset=self.subset,
                                    minVisits=minVisits, nside=256,
                                    mwebv=mwebv)
+        import pdb; pdb.set_trace()
         num_fields = self.writeSimlib(fname, fields, fieldtype=fieldtype, mwebv=mwebv)
 
         fields = self.sampleRegion(numFields=numFields, rng=rng,
@@ -536,7 +540,7 @@ class Simlib(object):
     @classmethod
     def fromSimlibFile(cls, simlibFileName):
         '''
-        Constructor for class using an ASCII 
+        Constructor for class using an ASCII
 
         Parameters
         ----------
@@ -555,7 +559,7 @@ class Simlib(object):
 
         file_header, file_data, file_footer = cls.read_simlibFile(simlibFileName)
         mydict = cls.getSimlibs(file_data)
-        meta = cls.simlibMetaData(file_header) 
+        meta = cls.simlibMetaData(file_header)
         cls = cls(simlibDict=mydict, simlibMetaData=meta)
         cls.validate(file_footer)
 
@@ -626,16 +630,16 @@ class Simlib(object):
             s = FieldSimlib.fromSimlibString(strings)
             mydict[s.fieldID] = s
 
-        return mydict 
-            
+        return mydict
+
 
     @staticmethod
     def read_simlibFile(simlibfile):
-    
+
         # slurp into a string
         with open(simlibfile) as f:
             ss = f.read()
-        
+
         # split into header, footer and data
         fullfile = ss.split('BEGIN LIBGEN')
         file_header = fullfile[0]
@@ -656,7 +660,7 @@ class FieldSimlib(object):
     """
     Class to hold data corresponding to a particular fieldID (LIBID) of a
     SNANA SIMLIB file and methods. The fieldSimlib class for a particular field
-    has the following attributes, and may be instantiated by supplying these, 
+    has the following attributes, and may be instantiated by supplying these,
     or can be conveniently constructed from the string corresponding to the
     description of this data in an SNANA simlib file using the constructor
     fromSimlibString:
@@ -687,9 +691,9 @@ class FieldSimlib(object):
     def __init__(self, simlibdata, simlib_meta):
         """
         Instantiate the class from the basic data
-        """ 
+        """
 
-        self.data = simlibdata 
+        self.data = simlibdata
         self.meta = simlib_meta
         self.fieldID = self.meta['LIBID']
 
@@ -718,9 +722,9 @@ class FieldSimlib(object):
         clsmeta = cls.libid_metadata(header_metadata)
 
         # Instantiate the class and make sure it works
-        myclass = cls(simlibdata=clsdata, simlib_meta=clsmeta) 
+        myclass = cls(simlibdata=clsdata, simlib_meta=clsmeta)
         myclass.validate(footer)
-        return myclass 
+        return myclass
 
     def validate(self, validate_string):
         """
@@ -734,7 +738,7 @@ class FieldSimlib(object):
         ----------
         validate_string : string, mandatory
             footer obtained by splitting the simlib corresponding to the field
-            usually of the form 
+            usually of the form
         """
 
         val = eval(validate_string.split()[-1])
